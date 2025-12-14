@@ -4,25 +4,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
 import os
-import io # Excel işlemi için gerekli hafıza kütüphanesi
+import io
 
 # --- SAYFA AYARLARI ---
 st.set_page_config(page_title="OMÜ MatrixLab Web", page_icon="🧪", layout="centered")
 
-# --- CSS İLE MOBİL İYİLEŞTİRMELERİ ---
+# --- CSS: SÜTUN VE SATIR NUMARALARINI ORTALA ---
 st.markdown("""
     <style>
-        .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-        h1 {
-            font-size: 1.8rem !important;
-        }
-        /* Tablo başlıklarını mobilde küçült */
-        .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-            font-size: 1rem;
-        }
+        .block-container { padding-top: 2rem; padding-bottom: 2rem; }
+        h1 { font-size: 1.8rem !important; }
+        /* Tablo başlıklarını ortala ve büyüt */
+        th { text-align: center !important; font-size: 1.1rem !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -50,7 +43,7 @@ with st.sidebar:
     tol = st.text_input("Tolerans", "0.0001")
     max_it = st.number_input("Max İter.", 100)
 
-# --- MATEMATİK FONKSİYONLARI ---
+# --- MATEMATİK ---
 def forward_sub(L, b):
     y = np.zeros_like(b)
     for i in range(len(b)): y[i] = (b[i] - np.dot(L[i, :i], y[:i])) / L[i, i]
@@ -61,18 +54,35 @@ def back_sub(U, y):
     for i in range(len(y)-1, -1, -1): x[i] = (y[i] - np.dot(U[i, i+1:], x[i+1:])) / U[i, i]
     return x
 
-# --- GİRİŞ ALANI (SEKMELİ) ---
+# --- GİRİŞ ALANI ---
 st.write("---")
-st.info("Verileri aşağıdaki sekmelerden giriniz:")
+st.info("Verileri giriniz (Satır ve Sütunlar 1'den başlar):")
 
 tab1, tab2 = st.tabs(["🟦 Matris A (Katsayılar)", "🟧 Vektör B (Sonuçlar)"])
 
+# --- KRİTİK DEĞİŞİKLİK BURADA: İndeksleri 1'den Başlatıyoruz ---
 if 'n_prev' not in st.session_state or st.session_state.n_prev != n:
-    st.session_state.df_a = pd.DataFrame(np.zeros((n, n)))
-    st.session_state.df_b = pd.DataFrame(np.zeros((n, 1)), columns=["Değer"])
+    # 1'den N'e kadar sayı listesi oluştur (1, 2, 3...)
+    index_labels = list(range(1, n + 1))
+    
+    # Matris A: Hem satırlar hem sütunlar 1'den başlar
+    st.session_state.df_a = pd.DataFrame(
+        np.zeros((n, n)), 
+        index=index_labels, 
+        columns=index_labels
+    )
+    
+    # Vektör B: Satırlar 1'den başlar
+    st.session_state.df_b = pd.DataFrame(
+        np.zeros((n, 1)), 
+        index=index_labels, 
+        columns=["Değer"]
+    )
     st.session_state.n_prev = n
 
 with tab1:
+    # use_container_width=True telefonda genişletir
+    # hide_index=False yaptık ki satır numaraları (1, 2, 3) görünsün
     matrix_a = st.data_editor(st.session_state.df_a, key="editor_a", use_container_width=True)
 
 with tab2:
@@ -81,11 +91,11 @@ with tab2:
 st.write("")
 if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary"):
     try:
+        # Hesaplama için indeksleri temizleyip saf sayıları alıyoruz
         A = matrix_a.to_numpy()
         B = vector_b.to_numpy().flatten()
         msg = []
 
-        # Hesaplama Mantığı
         if method == "LU Doolittle":
             L = np.eye(n); U = np.zeros((n, n))
             for i in range(n):
@@ -103,18 +113,18 @@ if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary")
             x = np.linalg.solve(A, B)
             msg = ["Standart çözüm uygulandı."]
 
-        # --- SONUÇ EKRANI ---
+        # --- SONUÇLAR ---
         st.divider()
         st.success("✅ Çözüm Tamamlandı")
         
         res_tab1, res_tab2 = st.tabs(["📊 Tablo & Excel", "📑 İşlem Kayıtları"])
         
         with res_tab1:
+            # Sonuçlarda da x1, x2... zaten 1'den başlıyor
             df_res = pd.DataFrame({"Bilinmeyen": [f"x{i+1}" for i in range(n)], "Hesaplanan": x})
-            st.dataframe(df_res, use_container_width=True)
+            st.dataframe(df_res, use_container_width=True, hide_index=True)
             
-            # --- EXCEL İNDİRME BUTONU (BURASI EKLENDİ) ---
-            # Excel dosyasını bellekte oluşturuyoruz
+            # Excel İndirme
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                 df_res.to_excel(writer, index=False, sheet_name='Sonuclar')
@@ -126,7 +136,6 @@ if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary")
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
-            # ---------------------------------------------
             
             # Grafik
             st.write("**Değer Dağılımı:**")
@@ -139,4 +148,3 @@ if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary")
             
     except Exception as e:
         st.error(f"Hata: {e}")
-
