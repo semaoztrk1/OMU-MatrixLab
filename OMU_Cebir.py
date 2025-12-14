@@ -4,9 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
 import os
+import io # Excel işlemi için gerekli hafıza kütüphanesi
 
 # --- SAYFA AYARLARI ---
-# layout="centered" yaparak mobilde içeriğin ortalanmasını sağlıyoruz
 st.set_page_config(page_title="OMÜ MatrixLab Web", page_icon="🧪", layout="centered")
 
 # --- CSS İLE MOBİL İYİLEŞTİRMELERİ ---
@@ -19,10 +19,14 @@ st.markdown("""
         h1 {
             font-size: 1.8rem !important;
         }
+        /* Tablo başlıklarını mobilde küçült */
+        .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+            font-size: 1rem;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER (LOGO & BAŞLIK) ---
+# --- HEADER ---
 col1, col2 = st.columns([1, 5])
 with col1:
     if os.path.exists("omu_logo.png"):
@@ -57,35 +61,31 @@ def back_sub(U, y):
     for i in range(len(y)-1, -1, -1): x[i] = (y[i] - np.dot(U[i, i+1:], x[i+1:])) / U[i, i]
     return x
 
-# --- MOBİL UYUMLU GİRİŞ ALANI (TABS) ---
+# --- GİRİŞ ALANI (SEKMELİ) ---
 st.write("---")
-st.info("Aşağıdaki sekmeleri kullanarak verileri giriniz.")
+st.info("Verileri aşağıdaki sekmelerden giriniz:")
 
-# MOBİL ÇÖZÜM BURADA: Tabs (Sekmeler) kullanıyoruz
 tab1, tab2 = st.tabs(["🟦 Matris A (Katsayılar)", "🟧 Vektör B (Sonuçlar)"])
 
-# Matrislerin boyutlarını N değiştikçe sıfırlıyoruz
 if 'n_prev' not in st.session_state or st.session_state.n_prev != n:
     st.session_state.df_a = pd.DataFrame(np.zeros((n, n)))
     st.session_state.df_b = pd.DataFrame(np.zeros((n, 1)), columns=["Değer"])
     st.session_state.n_prev = n
 
 with tab1:
-    st.write(f"**{n}x{n} Katsayılar Matrisi**")
-    # use_container_width=True telefonda tabloyu ekrana yayar
     matrix_a = st.data_editor(st.session_state.df_a, key="editor_a", use_container_width=True)
 
 with tab2:
-    st.write("**Sonuç Vektörü**")
     vector_b = st.data_editor(st.session_state.df_b, key="editor_b", use_container_width=True)
 
-st.write("") # Boşluk
+st.write("")
 if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary"):
     try:
         A = matrix_a.to_numpy()
         B = vector_b.to_numpy().flatten()
         msg = []
 
+        # Hesaplama Mantığı
         if method == "LU Doolittle":
             L = np.eye(n); U = np.zeros((n, n))
             for i in range(n):
@@ -107,17 +107,31 @@ if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary")
         st.divider()
         st.success("✅ Çözüm Tamamlandı")
         
-        # Sonuçları da sekmeli gösterelim ki telefonda uzamasın
-        res_tab1, res_tab2 = st.tabs(["📊 Sonuç Tablosu", "📑 İşlem Kayıtları"])
+        res_tab1, res_tab2 = st.tabs(["📊 Tablo & Excel", "📑 İşlem Kayıtları"])
         
         with res_tab1:
             df_res = pd.DataFrame({"Bilinmeyen": [f"x{i+1}" for i in range(n)], "Hesaplanan": x})
             st.dataframe(df_res, use_container_width=True)
             
+            # --- EXCEL İNDİRME BUTONU (BURASI EKLENDİ) ---
+            # Excel dosyasını bellekte oluşturuyoruz
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df_res.to_excel(writer, index=False, sheet_name='Sonuclar')
+                
+            st.download_button(
+                label="📥 Sonuçları Excel Olarak İndir",
+                data=buffer.getvalue(),
+                file_name="OMU_Cozum_Raporu.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
+            # ---------------------------------------------
+            
             # Grafik
-            fig, ax = plt.subplots(figsize=(4, 3)) # Mobilde küçük grafik
+            st.write("**Değer Dağılımı:**")
+            fig, ax = plt.subplots(figsize=(4, 2.5))
             ax.bar(df_res["Bilinmeyen"], df_res["Hesaplanan"], color="#2980B9")
-            ax.set_title("Sonuç Dağılımı")
             st.pyplot(fig, use_container_width=True)
 
         with res_tab2:
@@ -125,3 +139,4 @@ if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary")
             
     except Exception as e:
         st.error(f"Hata: {e}")
+
