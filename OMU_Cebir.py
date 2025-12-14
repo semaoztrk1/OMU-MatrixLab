@@ -5,107 +5,123 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import os
 
-# --- SAYFA YAPILANDIRMASI ---
-st.set_page_config(page_title="OMÜ MatrixLab Web", page_icon="🧪", layout="wide")
+# --- SAYFA AYARLARI ---
+# layout="centered" yaparak mobilde içeriğin ortalanmasını sağlıyoruz
+st.set_page_config(page_title="OMÜ MatrixLab Web", page_icon="🧪", layout="centered")
 
-# --- LOGO VE BAŞLIK ---
-# omu_logo.png dosyasının bu script ile aynı klasörde olması gerekir
-col_l, col_r = st.columns([1, 4])
-with col_l:
+# --- CSS İLE MOBİL İYİLEŞTİRMELERİ ---
+st.markdown("""
+    <style>
+        .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        h1 {
+            font-size: 1.8rem !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- HEADER (LOGO & BAŞLIK) ---
+col1, col2 = st.columns([1, 5])
+with col1:
     if os.path.exists("omu_logo.png"):
         logo = Image.open("omu_logo.png")
-        st.image(logo, width=120)
-with col_r:
-    st.title("OMÜ Kimya Mühendisliği")
-    st.subheader("Lineer Cebir Analiz Sistemi (MatrixLab Web)")
+        st.image(logo, use_container_width=True)
+    else:
+        st.write("🧪")
+with col2:
+    st.markdown("### OMÜ Kimya Mühendisliği")
+    st.caption("Lineer Cebir Analiz Sistemi")
 
-# --- SIDEBAR (KONTROL PANELİ) ---
-st.sidebar.header("⚙️ Sistem Ayarları")
-n = st.sidebar.number_input("Matris Boyutu (N)", min_value=2, max_value=10, value=3)
-method = st.sidebar.selectbox("Çözüm Yöntemi", [
-    "LU Doolittle", "Cholesky", "Gauss Yok Etme", "Gauss-Jordan", 
-    "Cramer", "Jacobi", "Gauss-Seidel", "Gram-Schmidt (QR)"
-])
+# --- SIDEBAR ---
+with st.sidebar:
+    st.header("⚙️ Ayarlar")
+    n = st.number_input("Matris Boyutu (N)", 2, 10, 3)
+    method = st.selectbox("Yöntem", [
+        "LU Doolittle", "Cholesky", "Gauss Yok Etme", 
+        "Cramer", "Jacobi", "Gauss-Seidel"
+    ])
+    st.divider()
+    tol = st.text_input("Tolerans", "0.0001")
+    max_it = st.number_input("Max İter.", 100)
 
-st.sidebar.divider()
-tol = st.sidebar.text_input("Tolerans", "0.0001")
-max_it = st.sidebar.number_input("Maks. İterasyon", value=100)
-
-# --- MATEMATİKSEL FONKSİYONLAR ---
+# --- MATEMATİK FONKSİYONLARI ---
 def forward_sub(L, b):
     y = np.zeros_like(b)
-    for i in range(len(b)):
-        y[i] = (b[i] - np.dot(L[i, :i], y[:i])) / L[i, i]
+    for i in range(len(b)): y[i] = (b[i] - np.dot(L[i, :i], y[:i])) / L[i, i]
     return y
 
 def back_sub(U, y):
     x = np.zeros_like(y)
-    for i in range(len(y)-1, -1, -1):
-        x[i] = (y[i] - np.dot(U[i, i+1:], x[i+1:])) / U[i, i]
+    for i in range(len(y)-1, -1, -1): x[i] = (y[i] - np.dot(U[i, i+1:], x[i+1:])) / U[i, i]
     return x
 
-# --- ANA GİRİŞ ALANI ---
-st.write("### 📝 Sistem Denklemleri ($Ax = B$)")
-st.info("Kutucuklara tıklayarak değerleri girin. Boş bırakılan yerler 0.0 kabul edilir.")
+# --- MOBİL UYUMLU GİRİŞ ALANI (TABS) ---
+st.write("---")
+st.info("Aşağıdaki sekmeleri kullanarak verileri giriniz.")
 
-# A ve B Matrisi için veri girişi (Streamlit data_editor çok pratiktir)
-col_a, col_b = st.columns([3, 1])
-with col_a:
-    st.write("**Matris A (Katsayılar)**")
-    matrix_a = st.data_editor(pd.DataFrame(np.zeros((n, n))), hide_index=True, key="a_input")
+# MOBİL ÇÖZÜM BURADA: Tabs (Sekmeler) kullanıyoruz
+tab1, tab2 = st.tabs(["🟦 Matris A (Katsayılar)", "🟧 Vektör B (Sonuçlar)"])
 
-with col_b:
-    st.write("**Vektör B**")
-    vector_b = st.data_editor(pd.DataFrame(np.zeros((n, 1)), columns=["B"]), hide_index=True, key="b_input")
+# Matrislerin boyutlarını N değiştikçe sıfırlıyoruz
+if 'n_prev' not in st.session_state or st.session_state.n_prev != n:
+    st.session_state.df_a = pd.DataFrame(np.zeros((n, n)))
+    st.session_state.df_b = pd.DataFrame(np.zeros((n, 1)), columns=["Değer"])
+    st.session_state.n_prev = n
 
-if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True):
+with tab1:
+    st.write(f"**{n}x{n} Katsayılar Matrisi**")
+    # use_container_width=True telefonda tabloyu ekrana yayar
+    matrix_a = st.data_editor(st.session_state.df_a, key="editor_a", use_container_width=True)
+
+with tab2:
+    st.write("**Sonuç Vektörü**")
+    vector_b = st.data_editor(st.session_state.df_b, key="editor_b", use_container_width=True)
+
+st.write("") # Boşluk
+if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary"):
     try:
         A = matrix_a.to_numpy()
         B = vector_b.to_numpy().flatten()
-        log_messages = []
+        msg = []
 
-        # Çözüm Motoru
         if method == "LU Doolittle":
             L = np.eye(n); U = np.zeros((n, n))
             for i in range(n):
                 for k in range(i, n): U[i, k] = A[i, k] - np.dot(L[i, :i], U[:i, k])
-                for k in range(i + 1, n): L[k, i] = (A[k, i] - np.dot(L[k, :i], U[:i, i])) / U[i, i]
-            log_messages.append(f"L Matrisi:\n{L}")
-            log_messages.append(f"U Matrisi:\n{U}")
+                for k in range(i+1, n): L[k, i] = (A[k, i] - np.dot(L[k, :i], U[:i, i])) / U[i, i]
             x = back_sub(U, forward_sub(L, B))
-
+            msg = [f"L Matrisi:\n{L}", f"U Matrisi:\n{U}"]
+        
         elif method == "Cholesky":
             L = np.linalg.cholesky(A)
             x = back_sub(L.T, forward_sub(L, B))
-            log_messages.append(f"Cholesky L:\n{L}")
-
+            msg = [f"L Matrisi:\n{L}"]
+        
         else:
             x = np.linalg.solve(A, B)
-            log_messages.append("Sistem standart Numpy motoru ile çözüldü.")
+            msg = ["Standart çözüm uygulandı."]
 
-        # --- SONUÇLARIN GÖSTERİLMESİ ---
+        # --- SONUÇ EKRANI ---
         st.divider()
-        res_col, log_col = st.columns([4, 6])
+        st.success("✅ Çözüm Tamamlandı")
         
-        with res_col:
-            st.success("✅ Çözüm Bulundu")
-            res_df = pd.DataFrame({"Xi": [f"x{i+1}" for i in range(n)], "Değer": x})
-            st.table(res_df)
+        # Sonuçları da sekmeli gösterelim ki telefonda uzamasın
+        res_tab1, res_tab2 = st.tabs(["📊 Sonuç Tablosu", "📑 İşlem Kayıtları"])
+        
+        with res_tab1:
+            df_res = pd.DataFrame({"Bilinmeyen": [f"x{i+1}" for i in range(n)], "Hesaplanan": x})
+            st.dataframe(df_res, use_container_width=True)
             
-            # Excel İndirme Butonu
-            excel_data = res_df.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 Sonuçları İndir (CSV)", excel_data, "cozum.csv", "text/csv")
+            # Grafik
+            fig, ax = plt.subplots(figsize=(4, 3)) # Mobilde küçük grafik
+            ax.bar(df_res["Bilinmeyen"], df_res["Hesaplanan"], color="#2980B9")
+            ax.set_title("Sonuç Dağılımı")
+            st.pyplot(fig, use_container_width=True)
 
-        with log_col:
-            st.write("**📑 İşlem Basamakları**")
-            for msg in log_messages:
-                st.code(msg)
-
-        # --- GRAFİK ---
-        st.subheader("📊 Değer Dağılım Grafiği")
-        fig, ax = plt.subplots()
-        ax.bar(res_df["Xi"], res_df["Değer"], color='#2E86C1')
-        st.pyplot(fig)
-
+        with res_tab2:
+            for m in msg: st.code(m)
+            
     except Exception as e:
-        st.error(f"⚠️ Hata: {e}")
+        st.error(f"Hata: {e}")
