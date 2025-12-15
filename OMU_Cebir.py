@@ -9,27 +9,67 @@ import io
 # --- SAYFA AYARLARI ---
 st.set_page_config(page_title="OMÜ MatrixLab Web", page_icon="🧪", layout="centered")
 
-# --- CSS: SÜTUN VE SATIR NUMARALARINI ORTALA ---
+# --- CSS: GÖRSEL İYİLEŞTİRMELER (FONT & LOGO) ---
 st.markdown("""
     <style>
+        /* Genel blok boşlukları */
         .block-container { padding-top: 2rem; padding-bottom: 2rem; }
-        h1 { font-size: 1.8rem !important; }
+        
         /* Tablo başlıklarını ortala ve büyüt */
-        th { text-align: center !important; font-size: 1.1rem !important; }
+        th { text-align: center !important; font-size: 1.05rem !important; }
+
+        /* --- FONT AYARLARI --- */
+        /* Tüm başlıklar için daha profesyonel bir font ailesi */
+        h1, h2, h3, h4 {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+            color: #1B2631; /* Kurumsal Koyu Lacivert */
+        }
+        /* Ana Başlık (h3 olarak kullanıyoruz) */
+        div[data-testid="column"] h3 {
+             font-weight: 800 !important;
+             font-size: 2rem !important;
+             margin-bottom: 0.2rem !important;
+        }
+        /* Alt Başlık (Caption) */
+        div[data-testid="stCaptionContainer"] {
+            font-size: 1.1rem !important;
+            color: #566573;
+        }
+
+        /* --- LOGO DÜZELTME --- */
+        /* Logonun kesilmesini önler, kutuya sığdırır */
+        [data-testid="stImage"] > img {
+            object-fit: contain !important; 
+            max-height: 130px; /* Logoyu çok büyütme */
+            width: auto !important; /* En-boy oranını koru */
+            margin: auto; /* Ortala */
+            display: block;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER ---
-col1, col2 = st.columns([1, 5])
+# --- HEADER (LOGO & BAŞLIK) ---
+# Sütun oranını logoya biraz daha yer açmak için 1.2'ye 4.8 yaptık
+col1, col2 = st.columns([1.2, 4.8])
 with col1:
     if os.path.exists("omu_logo.png"):
         logo = Image.open("omu_logo.png")
-        st.image(logo, use_container_width=True)
+        st.image(logo)
     else:
-        st.write("🧪")
+        st.write("🧪 LOGO YOK")
 with col2:
+    # Başlıklar CSS ile şekillendirildi
     st.markdown("### OMÜ Kimya Mühendisliği")
-    st.caption("Lineer Cebir Analiz Sistemi")
+    st.caption("Lineer Cebir Analiz ve Çözüm Sistemi")
+
+# --- YENİ EKLENEN: TANITIM METNİ ---
+st.markdown("""
+---
+**MatrixLab Web**, Ondokuz Mayıs Üniversitesi Kimya Mühendisliği Bölümü öğrencileri ve araştırmacılarının, mühendislik problemlerinde sıkça karşılaşılan lineer denklem sistemlerini ($Ax=B$) hızlı ve güvenilir bir şekilde çözmeleri için geliştirilmiştir.
+
+Kütle ve enerji denklikleri, reaktör tasarımları veya çok bileşenli ayırma işlemleri gibi karmaşık süreçlerin modellenmesinde ortaya çıkan matrisleri; **LU Ayrıştırması**, **Cholesky**, **Cramer** ve **İteratif Yöntemler** gibi farklı algoritmalarla analiz eder. Adım adım işlem logları ve Excel raporlama özelliği sayesinde akademik çalışmalara ve proje raporlarına doğrudan entegre edilebilir.
+---
+""")
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -55,34 +95,19 @@ def back_sub(U, y):
     return x
 
 # --- GİRİŞ ALANI ---
-st.write("---")
-st.info("Verileri giriniz (Satır ve Sütunlar 1'den başlar):")
+st.info("👇 Analiz verilerini aşağıdaki sekmelerden giriniz (Satır/Sütun 1'den başlar).")
 
 tab1, tab2 = st.tabs(["🟦 Matris A (Katsayılar)", "🟧 Vektör B (Sonuçlar)"])
 
-# --- KRİTİK DEĞİŞİKLİK BURADA: İndeksleri 1'den Başlatıyoruz ---
 if 'n_prev' not in st.session_state or st.session_state.n_prev != n:
-    # 1'den N'e kadar sayı listesi oluştur (1, 2, 3...)
     index_labels = list(range(1, n + 1))
-    
-    # Matris A: Hem satırlar hem sütunlar 1'den başlar
     st.session_state.df_a = pd.DataFrame(
-        np.zeros((n, n)), 
-        index=index_labels, 
-        columns=index_labels
-    )
-    
-    # Vektör B: Satırlar 1'den başlar
+        np.zeros((n, n)), index=index_labels, columns=index_labels)
     st.session_state.df_b = pd.DataFrame(
-        np.zeros((n, 1)), 
-        index=index_labels, 
-        columns=["Değer"]
-    )
+        np.zeros((n, 1)), index=index_labels, columns=["Değer"])
     st.session_state.n_prev = n
 
 with tab1:
-    # use_container_width=True telefonda genişletir
-    # hide_index=False yaptık ki satır numaraları (1, 2, 3) görünsün
     matrix_a = st.data_editor(st.session_state.df_a, key="editor_a", use_container_width=True)
 
 with tab2:
@@ -91,7 +116,6 @@ with tab2:
 st.write("")
 if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary"):
     try:
-        # Hesaplama için indeksleri temizleyip saf sayıları alıyoruz
         A = matrix_a.to_numpy()
         B = vector_b.to_numpy().flatten()
         msg = []
@@ -120,11 +144,9 @@ if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary")
         res_tab1, res_tab2 = st.tabs(["📊 Tablo & Excel", "📑 İşlem Kayıtları"])
         
         with res_tab1:
-            # Sonuçlarda da x1, x2... zaten 1'den başlıyor
             df_res = pd.DataFrame({"Bilinmeyen": [f"x{i+1}" for i in range(n)], "Hesaplanan": x})
             st.dataframe(df_res, use_container_width=True, hide_index=True)
             
-            # Excel İndirme
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                 df_res.to_excel(writer, index=False, sheet_name='Sonuclar')
@@ -137,7 +159,6 @@ if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary")
                 use_container_width=True
             )
             
-            # Grafik
             st.write("**Değer Dağılımı:**")
             fig, ax = plt.subplots(figsize=(4, 2.5))
             ax.bar(df_res["Bilinmeyen"], df_res["Hesaplanan"], color="#2980B9")
