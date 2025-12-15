@@ -9,65 +9,54 @@ import io
 # --- SAYFA AYARLARI ---
 st.set_page_config(page_title="OMÜ MatrixLab Web", page_icon="🧪", layout="centered")
 
-# --- CSS: GÖRSEL İYİLEŞTİRMELER (FONT & LOGO) ---
+# --- CSS: TASARIM DÜZELTMELERİ ---
 st.markdown("""
     <style>
-        /* Genel blok boşlukları */
         .block-container { padding-top: 2rem; padding-bottom: 2rem; }
-        
-        /* Tablo başlıklarını ortala ve büyüt */
         th { text-align: center !important; font-size: 1.05rem !important; }
-
-        /* --- FONT AYARLARI --- */
-        /* Tüm başlıklar için daha profesyonel bir font ailesi */
-        h1, h2, h3, h4 {
+        
+        /* Font Ayarları */
+        h1, h2, h3, h4, p {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
-            color: #1B2631; /* Kurumsal Koyu Lacivert */
         }
-        /* Ana Başlık (h3 olarak kullanıyoruz) */
         div[data-testid="column"] h3 {
+             color: #1B2631; 
              font-weight: 800 !important;
              font-size: 2rem !important;
              margin-bottom: 0.2rem !important;
         }
-        /* Alt Başlık (Caption) */
-        div[data-testid="stCaptionContainer"] {
-            font-size: 1.1rem !important;
-            color: #566573;
-        }
-
-        /* --- LOGO DÜZELTME --- */
-        /* Logonun kesilmesini önler, kutuya sığdırır */
+        
+        /* --- LOGO DÜZELTME (Kesilmeyi önlemek için) --- */
         [data-testid="stImage"] > img {
             object-fit: contain !important; 
-            max-height: 130px; /* Logoyu çok büyütme */
-            width: auto !important; /* En-boy oranını koru */
-            margin: auto; /* Ortala */
+            max-height: 140px; /* Logoyu biraz daha büyük göster */
+            width: auto !important; 
+            margin: auto; 
             display: block;
+            padding-top: 10px; /* Üst kısımdan kesilmemesi için boşluk */
         }
     </style>
 """, unsafe_allow_html=True)
 
 # --- HEADER (LOGO & BAŞLIK) ---
-# Sütun oranını logoya biraz daha yer açmak için 1.2'ye 4.8 yaptık
 col1, col2 = st.columns([1.2, 4.8])
 with col1:
     if os.path.exists("omu_logo.png"):
         logo = Image.open("omu_logo.png")
         st.image(logo)
     else:
-        st.write("🧪 LOGO YOK")
+        st.write("🧪")
 with col2:
-    # Başlıklar CSS ile şekillendirildi
     st.markdown("### OMÜ Kimya Mühendisliği")
     st.caption("Lineer Cebir Analiz ve Çözüm Sistemi")
 
-# --- YENİ EKLENEN: TANITIM METNİ ---
+# --- TANITIM METNİ ---
 st.markdown("""
 ---
-**MatrixLab Web**, Ondokuz Mayıs Üniversitesi Kimya Mühendisliği Bölümü öğrencileri ve araştırmacılarının, mühendislik problemlerinde sıkça karşılaşılan lineer denklem sistemlerini ($Ax=B$) hızlı ve güvenilir bir şekilde çözmeleri için geliştirilmiştir.
+**Hakkında:**
+Bu yazılım, **Ondokuz Mayıs Üniversitesi Kimya Mühendisliği** laboratuvar ve proje çalışmalarında karşılaşılan karmaşık lineer denklem sistemlerinin ($Ax=B$) sayısal yöntemlerle çözülmesi amacıyla geliştirilmiştir.
 
-Kütle ve enerji denklikleri, reaktör tasarımları veya çok bileşenli ayırma işlemleri gibi karmaşık süreçlerin modellenmesinde ortaya çıkan matrisleri; **LU Ayrıştırması**, **Cholesky**, **Cramer** ve **İteratif Yöntemler** gibi farklı algoritmalarla analiz eder. Adım adım işlem logları ve Excel raporlama özelliği sayesinde akademik çalışmalara ve proje raporlarına doğrudan entegre edilebilir.
+Özellikle **kütle ve enerji denkliği**, **reaktör tasarımı** ve **çok bileşenli ayırma** süreçlerinde ortaya çıkan matrisleri; *LU Ayrıştırması, Cholesky, Gauss Eliminasyon* ve *İteratif Yöntemler* kullanarak analiz eder. Sonuçları adım adım işlem basamaklarıyla sunar ve Excel formatında raporlar.
 ---
 """)
 
@@ -83,7 +72,7 @@ with st.sidebar:
     tol = st.text_input("Tolerans", "0.0001")
     max_it = st.number_input("Max İter.", 100)
 
-# --- MATEMATİK ---
+# --- MATEMATİK MOTORU ---
 def forward_sub(L, b):
     y = np.zeros_like(b)
     for i in range(len(b)): y[i] = (b[i] - np.dot(L[i, :i], y[:i])) / L[i, i]
@@ -94,17 +83,14 @@ def back_sub(U, y):
     for i in range(len(y)-1, -1, -1): x[i] = (y[i] - np.dot(U[i, i+1:], x[i+1:])) / U[i, i]
     return x
 
-# --- GİRİŞ ALANI ---
-st.info("👇 Analiz verilerini aşağıdaki sekmelerden giriniz (Satır/Sütun 1'den başlar).")
-
+# --- GİRİŞ ALANI (Sadeleştirildi) ---
+# Bilgi kutusu (st.info) kaldırıldı.
 tab1, tab2 = st.tabs(["🟦 Matris A (Katsayılar)", "🟧 Vektör B (Sonuçlar)"])
 
 if 'n_prev' not in st.session_state or st.session_state.n_prev != n:
     index_labels = list(range(1, n + 1))
-    st.session_state.df_a = pd.DataFrame(
-        np.zeros((n, n)), index=index_labels, columns=index_labels)
-    st.session_state.df_b = pd.DataFrame(
-        np.zeros((n, 1)), index=index_labels, columns=["Değer"])
+    st.session_state.df_a = pd.DataFrame(np.zeros((n, n)), index=index_labels, columns=index_labels)
+    st.session_state.df_b = pd.DataFrame(np.zeros((n, 1)), index=index_labels, columns=["Değer"])
     st.session_state.n_prev = n
 
 with tab1:
@@ -120,6 +106,7 @@ if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary")
         B = vector_b.to_numpy().flatten()
         msg = []
 
+        # --- ÇÖZÜM ---
         if method == "LU Doolittle":
             L = np.eye(n); U = np.zeros((n, n))
             for i in range(n):
