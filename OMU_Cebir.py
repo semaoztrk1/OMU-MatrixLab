@@ -9,7 +9,7 @@ import io
 # --- SAYFA AYARLARI ---
 st.set_page_config(page_title="OMÜ MatrixLab Web", page_icon="🧪", layout="centered")
 
-# --- CSS: TASARIM ---
+# --- CSS: LOGO VE TASARIM DÜZELTMELERİ ---
 st.markdown("""
     <style>
         .block-container { padding-top: 2rem; padding-bottom: 2rem; }
@@ -27,14 +27,17 @@ st.markdown("""
              margin-bottom: 0px !important;
         }
 
-        /* LOGO DÜZELTME */
+        /* --- LOGO DÜZELTME (Final) --- */
+        /* Logoyu kapsayan kutuya üstten boşluk ver ve resmi sığdır */
+        div[data-testid="stImage"] {
+            padding-top: 20px !important; /* Yukarıdan aşağı it */
+        }
         [data-testid="stImage"] > img {
             object-fit: contain !important; 
-            max-height: 140px; 
+            max-height: 150px; 
             width: auto !important; 
             margin: auto; 
             display: block;
-            padding-top: 5px;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -51,12 +54,11 @@ with col2:
     st.markdown("### OMÜ Kimya Mühendisliği")
     st.caption("Lineer Cebir Analiz ve Çözüm Sistemi")
 
-# --- TANITIM METNİ (GÜNCELLENDİ) ---
-# Buradaki metni değiştirdik.
+# --- TANITIM METNİ (DÜZELTİLDİ: Ax=B) ---
 st.markdown("""
     <div style="background-color:#F8F9F9; padding:15px; border-radius:10px; border-left: 5px solid #2E86C1; margin-top:10px; font-size:15px; color:#424949; line-height: 1.5;">
         <strong>Hakkında:</strong> Bu yazılım, <strong>Ondokuz Mayıs Üniversitesi Kimya Mühendisliği</strong> laboratuvar ve proje çalışmalarında 
-        karşılaşılan lineer denklem sistemlerinin ($Ax=B$) çözümü için geliştirilmiştir. 
+        karşılaşılan lineer denklem sistemlerinin (Ax = B) çözümü için geliştirilmiştir. 
         <br><br>
         Mühendislik problemlerinin çözümünde kullanılan nümerik yöntemleri uygular. 
         Hesaplama süreçlerini şeffaf bir şekilde gösterir ve sonuçları grafik destekli <strong>Excel raporlarına</strong> dönüştürür.
