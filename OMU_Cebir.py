@@ -9,7 +9,7 @@ import io
 # --- SAYFA AYARLARI ---
 st.set_page_config(page_title="OMÜ MatrixLab Web", page_icon="🧪", layout="centered")
 
-# --- CSS: TASARIM VE LOGO DÜZELTMELERİ ---
+# --- CSS: TASARIM ---
 st.markdown("""
     <style>
         .block-container { padding-top: 2rem; padding-bottom: 2rem; }
@@ -27,19 +27,19 @@ st.markdown("""
              margin-bottom: 0px !important;
         }
 
-        /* LOGO DÜZELTME (Kesilmeyi Önler) */
+        /* LOGO DÜZELTME */
         [data-testid="stImage"] > img {
             object-fit: contain !important; 
             max-height: 140px; 
             width: auto !important; 
             margin: auto; 
             display: block;
-            padding-top: 5px; /* Üstten hafif boşluk */
+            padding-top: 5px;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER (LOGO & BAŞLIK) ---
+# --- HEADER ---
 col1, col2 = st.columns([1.2, 4.8])
 with col1:
     if os.path.exists("omu_logo.png"):
@@ -51,15 +51,15 @@ with col2:
     st.markdown("### OMÜ Kimya Mühendisliği")
     st.caption("Lineer Cebir Analiz ve Çözüm Sistemi")
 
-# --- TANITIM METNİ (GÜNCELLENDİ: KİBAR VE AÇIK) ---
-# Burayı HTML ile özelleştirdik: Daha küçük font, temiz görünüm.
+# --- TANITIM METNİ (GÜNCELLENDİ) ---
+# Buradaki metni değiştirdik.
 st.markdown("""
-    <div style="background-color:#F8F9F9; padding:15px; border-radius:10px; border-left: 5px solid #2E86C1; margin-top:10px; font-size:15px; color:#424949;">
+    <div style="background-color:#F8F9F9; padding:15px; border-radius:10px; border-left: 5px solid #2E86C1; margin-top:10px; font-size:15px; color:#424949; line-height: 1.5;">
         <strong>Hakkında:</strong> Bu yazılım, <strong>Ondokuz Mayıs Üniversitesi Kimya Mühendisliği</strong> laboratuvar ve proje çalışmalarında 
-        karşılaşılan lineer denklem sistemlerinin (Ax=B) çözümü için geliştirilmiştir. 
+        karşılaşılan lineer denklem sistemlerinin ($Ax=B$) çözümü için geliştirilmiştir. 
         <br><br>
-        Özellikle <em>kütle/enerji denklikleri</em> ve <em>reaktör tasarımı</em> süreçlerinde ortaya çıkan matrisleri; 
-        <strong>LU Ayrıştırması, Cholesky, Gauss Eliminasyon</strong> gibi yöntemlerle analiz eder ve Excel raporu sunar.
+        Mühendislik problemlerinin çözümünde kullanılan nümerik yöntemleri uygular. 
+        Hesaplama süreçlerini şeffaf bir şekilde gösterir ve sonuçları grafik destekli <strong>Excel raporlarına</strong> dönüştürür.
     </div>
 """, unsafe_allow_html=True)
 
@@ -87,7 +87,7 @@ def back_sub(U, y):
     return x
 
 # --- GİRİŞ ALANI ---
-st.write("") # Boşluk
+st.write("") 
 tab1, tab2 = st.tabs(["🟦 Matris A (Katsayılar)", "🟧 Vektör B (Sonuçlar)"])
 
 if 'n_prev' not in st.session_state or st.session_state.n_prev != n:
@@ -109,7 +109,6 @@ if st.button("🚀 ANALİZİ BAŞLAT", use_container_width=True, type="primary")
         B = vector_b.to_numpy().flatten()
         msg = []
 
-        # --- ÇÖZÜM ---
         if method == "LU Doolittle":
             L = np.eye(n); U = np.zeros((n, n))
             for i in range(n):
