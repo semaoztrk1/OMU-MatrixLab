@@ -9,31 +9,32 @@ import io
 # --- SAYFA AYARLARI ---
 st.set_page_config(page_title="OMÜ MatrixLab Web", page_icon="🧪", layout="centered")
 
-# --- CSS: TASARIM DÜZELTMELERİ ---
+# --- CSS: TASARIM VE LOGO DÜZELTMELERİ ---
 st.markdown("""
     <style>
         .block-container { padding-top: 2rem; padding-bottom: 2rem; }
-        th { text-align: center !important; font-size: 1.05rem !important; }
         
         /* Font Ayarları */
-        h1, h2, h3, h4, p {
+        h1, h2, h3, h4, p, div {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
         }
+        
+        /* Ana Başlık */
         div[data-testid="column"] h3 {
              color: #1B2631; 
              font-weight: 800 !important;
              font-size: 2rem !important;
-             margin-bottom: 0.2rem !important;
+             margin-bottom: 0px !important;
         }
-        
-        /* --- LOGO DÜZELTME (Kesilmeyi önlemek için) --- */
+
+        /* LOGO DÜZELTME (Kesilmeyi Önler) */
         [data-testid="stImage"] > img {
             object-fit: contain !important; 
-            max-height: 140px; /* Logoyu biraz daha büyük göster */
+            max-height: 140px; 
             width: auto !important; 
             margin: auto; 
             display: block;
-            padding-top: 10px; /* Üst kısımdan kesilmemesi için boşluk */
+            padding-top: 5px; /* Üstten hafif boşluk */
         }
     </style>
 """, unsafe_allow_html=True)
@@ -50,15 +51,17 @@ with col2:
     st.markdown("### OMÜ Kimya Mühendisliği")
     st.caption("Lineer Cebir Analiz ve Çözüm Sistemi")
 
-# --- TANITIM METNİ ---
+# --- TANITIM METNİ (GÜNCELLENDİ: KİBAR VE AÇIK) ---
+# Burayı HTML ile özelleştirdik: Daha küçük font, temiz görünüm.
 st.markdown("""
----
-**Hakkında:**
-Bu yazılım, **Ondokuz Mayıs Üniversitesi Kimya Mühendisliği** laboratuvar ve proje çalışmalarında karşılaşılan karmaşık lineer denklem sistemlerinin ($Ax=B$) sayısal yöntemlerle çözülmesi amacıyla geliştirilmiştir.
-
-Özellikle **kütle ve enerji denkliği**, **reaktör tasarımı** ve **çok bileşenli ayırma** süreçlerinde ortaya çıkan matrisleri; *LU Ayrıştırması, Cholesky, Gauss Eliminasyon* ve *İteratif Yöntemler* kullanarak analiz eder. Sonuçları adım adım işlem basamaklarıyla sunar ve Excel formatında raporlar.
----
-""")
+    <div style="background-color:#F8F9F9; padding:15px; border-radius:10px; border-left: 5px solid #2E86C1; margin-top:10px; font-size:15px; color:#424949;">
+        <strong>Hakkında:</strong> Bu yazılım, <strong>Ondokuz Mayıs Üniversitesi Kimya Mühendisliği</strong> laboratuvar ve proje çalışmalarında 
+        karşılaşılan lineer denklem sistemlerinin (Ax=B) çözümü için geliştirilmiştir. 
+        <br><br>
+        Özellikle <em>kütle/enerji denklikleri</em> ve <em>reaktör tasarımı</em> süreçlerinde ortaya çıkan matrisleri; 
+        <strong>LU Ayrıştırması, Cholesky, Gauss Eliminasyon</strong> gibi yöntemlerle analiz eder ve Excel raporu sunar.
+    </div>
+""", unsafe_allow_html=True)
 
 # --- SIDEBAR ---
 with st.sidebar:
@@ -83,8 +86,8 @@ def back_sub(U, y):
     for i in range(len(y)-1, -1, -1): x[i] = (y[i] - np.dot(U[i, i+1:], x[i+1:])) / U[i, i]
     return x
 
-# --- GİRİŞ ALANI (Sadeleştirildi) ---
-# Bilgi kutusu (st.info) kaldırıldı.
+# --- GİRİŞ ALANI ---
+st.write("") # Boşluk
 tab1, tab2 = st.tabs(["🟦 Matris A (Katsayılar)", "🟧 Vektör B (Sonuçlar)"])
 
 if 'n_prev' not in st.session_state or st.session_state.n_prev != n:
